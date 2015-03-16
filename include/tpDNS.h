@@ -4,4 +4,7 @@
 #include <stdio.h>
 #include <syslog.h>
 
+#define PROGRAM_NAME "TP-DNS"
+#define LOG_OPTIONS  LOG_CONS | LOG_PID
+#define LOG_FACILITY LOG_LOCAL1
 #endif
