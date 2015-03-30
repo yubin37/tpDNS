@@ -1,6 +1,6 @@
-#include "../include/tpDNS.h"
-#include "../include/tpHash.h"
+#include "tpHash.h"
 
+#include <string.h>
 hash_type fnvHash(const unsigned char *input)
 {
   hash_type hash = FNV_OFFSET_BASIS;
@@ -8,7 +8,7 @@ hash_type fnvHash(const unsigned char *input)
   int i = 0;
 
   for ( i; i < length; ++i) {
-    hash = hash * (hash_type)FNW_PRIIME;
+    hash = hash * (hash_type)FNV_PRIME;
     hash = hash ^ input[i];
   }
 
