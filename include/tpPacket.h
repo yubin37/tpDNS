@@ -24,7 +24,7 @@
 #define RR_TYPE_MX_RECORD              0x000f
 #define RR_TYPE_NS_RECORD              0x0002
 
-#define RD_DATA_TYPE_A_RECORED         0x0001
+#define RD_DATA_TYPE_A_RECORD          0x0001
 #define RD_DATA_TYPE_CNAME             0x0005
 #define RD_DATA_TYPE_NAME_SERVER       0x0002
 #define RD_DATA_TYPE_MAIL_SERVER       0x000f
@@ -55,50 +55,49 @@
 struct packetMessage{
   uint16_t          id;
 
-  unsigned char     qr;
-  unsigned char     opcode;
+  unsigned char     qr : 1;
+  unsigned char     opcode : 4;
+  unsigned char     aa : 1;
+  unsigned char     tc : 1;
+  unsigned char     rd : 1;
+  unsigned char     ra : 1;
 
-  unsigned char     aa;
-  unsigned char     tc;
-
-  unsigned char     rd;
-  unsigned char     ra;
-
-  unsigned char     rcode; 
-  unsigned char     reserved;
+  unsigned char     rcode : 4; 
+  unsigned char     reserved : 4;
   
   uint16_t          qdCount;
   uint16_t          anCount;
   uint16_t          nsCount;
   uint16_t          arCount;
 
-  struct question*  question;
-  struct answer*    answer;
+  struct packetQuestion*  question;
+  struct packetAnswer*    answer;
 };
 
-struct question{
+struct packetQuestion{
   uint16_t                   qType;
   uint16_t                   qClass;
   char                       qName[DOMAIN_NAME_LENGTH];
-  struct question            *next;
+  struct packetQuestion      *next;
 };
 
-struct nameServer {
+struct mailServer {
   uint16_t                   preference;
   char                       name[DOMAIN_NAME_LENGTH];
 };
   
-struct answer{
+struct packetAnswer{
   char                       aName[DOMAIN_NAME_LENGTH];
   uint16_t                   rdType;
   uint16_t                   aClass;
   uint32_t                   aTTL;
   uint16_t                   rdLength;
-  struct answer              *next;
+  struct packetAnswer        *next;
 
   union {
+    uint32_t                 ip;
     char                     aName[DOMAIN_NAME_LENGTH];
-    struct nameServer        nameServer;
+    struct mailServer        name;
   }rdData;
 };
 

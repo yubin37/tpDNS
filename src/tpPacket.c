@@ -1,6 +1,6 @@
 #include "tpPacket.h"
 #include <stdlib.h>
-
+#include <syslog.h>
 int getDnsMessage(const char* message, struct packetMessage **packet)
 {
   struct packetMessage *temp;
@@ -39,9 +39,12 @@ int getDnsMessage(const char* message, struct packetMessage **packet)
   temp->arCount = GET_NUMBER_FROM_TWO_BYTES(*ptr, *(ptr + 1));
   ptr += 2;
 
-  struct question *question;
-  question = (struct question*)calloc(1, sizeof(struct question));
+  struct packetQuestion *question;
+  question = (struct packetQuestion*)calloc(1, 
+                     sizeof(struct packetQuestion));
   if (question == NULL) {
+    syslog(LOG_ERR, "calloc packetQuestion struct error "
+                    "in Method getDnsMessage");
     return -1;
   }
 
@@ -56,26 +59,75 @@ int getDnsMessage(const char* message, struct packetMessage **packet)
   ptr += 2;
 
   question->next = NULL;
-
   temp->question = question;
  
- 
+  struct packetAnswer *answerPtr =  temp->answer;
+  int i = 0;
+  for (i; i < temp->anCount; i++) {
+    struct packetAnswer *answer = (struct packetAnswer*)calloc(1,
+                        sizeof(struct packetAnswer));
+    if (answer == NULL) {
+      syslog(LOG_ERR, "calloc packetAnswer struct error "
+                      "in Method getDnsMessage");
+      return -1;
+    }
+
+    length = getName(answer->aName, ptr, DOMAIN_NAME_LENGTH);
+    ptr += length;
+    
+    answer->rdType = GET_NUMBER_FROM_TWO_BYTES(*ptr, *(ptr + 1));
+    ptr += 2;
+
+    answer->aClass = GET_NUMBER_FROM_TWO_BYTES(*ptr, *(ptr + 1));
+    ptr += 2;
+
+    answer->aTTL = GET_NUMBER_FROM_FOUR_BYTES(*ptr, *(ptr + 1),
+                                              *(ptr + 2), *(ptr + 3));
+    ptr += 4;
+    
+    answer->rdLength = GET_NUMBER_FROM_TWO_BYTES(*ptr, *(ptr + 1));
+    ptr += 2;
+    
+    switch(answer->rdType) {
+    case RD_DATA_TYPE_A_RECORD:
+      answer->rdData.ip = GET_NUMBER_FROM_FOUR_BYTES(*ptr, *(ptr + 1),
+                           *(ptr + 2), *(ptr + 3));
+      ptr += 4;
+      break;  
+    case RD_DATA_TYPE_CNAME:
+    case RD_DATA_TYPE_NAME_SERVER:
+      length = getName(answer->rdData.aName, ptr, DOMAIN_NAME_LENGTH);
+      ptr += length;
+      break;
+    case RD_DATA_TYPE_MAIL_SERVER:
+      answer->rdData.name.preference = 
+          GET_NUMBER_FROM_TWO_BYTES(*ptr, *(ptr + 1));
+      ptr += 2;
+      length = getName(answer->rdData.name.name, ptr, DOMAIN_NAME_LENGTH);
+      ptr += length;
+      break;
+    }
+    
+    answer->next = NULL;
+    answerPtr->next = answer;
+    answerPtr = answer;
+  }
   *packet = temp;
   return 0;
 } 
 
 int freePacketMessage(struct packetMessage *packet)
 {
-  struct question *question = packet->question;
+  struct packetQuestion *question = packet->question;
   while(question != NULL) {
-    struct question *temp = question->next;
+    struct packetQuestion *temp = question->next;
     free(question);
     question = temp;
   }
 
-  struct answer *answer = packet->answer;
+  struct packetAnswer *answer = packet->answer;
   while(answer != NULL) {
-    struct answer *temp = answer->next;
+    struct packetAnswer *temp = answer->next;
     free(answer);
     answer = temp;
   }
