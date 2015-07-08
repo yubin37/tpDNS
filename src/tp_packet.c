@@ -1,4 +1,4 @@
-#include "tpPacket.h"
+#include "tp_packet.h"
 #include <stdlib.h>
 #include <syslog.h>
 int getDnsMessage(const char* message, struct packetMessage **packet)

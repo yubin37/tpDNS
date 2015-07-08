@@ -1,7 +1,9 @@
-#include "tpHash.h"
+#include "tp_hash.h"
 
 #include <string.h>
-hash_type fnvHash(const unsigned char *input)
+
+struct hash_element hash_table[MAX_ELEMENTS];
+hash_type Fnv_hash_value(const unsigned char *input)
 {
   hash_type hash = FNV_OFFSET_BASIS;
   int length = strlen(input);
